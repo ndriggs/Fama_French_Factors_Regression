@@ -11,6 +11,8 @@ install.packages("readr")
 install.packages("dplyr")
 install.packages("lubridate")
 install.packages("ggplot2")
+install.packages("MASS")
+
 
 ## changes - add readr, dplyr, lubridate
 ## add L to NUL
@@ -30,7 +32,7 @@ library("readr")
 library("dplyr")
 library("lubridate")
 library("ggplot2")
-
+library("MASS")
 
 #Define the date range:
 open_date  = "1997-12-31"
@@ -84,11 +86,26 @@ View(FF5)
 
 df <- merge(x=stk, y=FF5, by='date', all = FALSE)
 
-df <- mutate(df, Daily_Return = df$AAPL.Close - df$AAPL.Open)
+#add an Excess Returns column for returns greater than the risk free rate
+df <- mutate(df, 
+             Excess_Returns = ((df$AAPL.Close - df$AAPL.Open) / df$AAPL.Open ) - df$RF)
+
+#run the regression
+colnames(df)[8] <- "Mkt_RF" #rename the column so it's workable
+no_interactions_fit <- lm(Excess_Returns ~ Mkt_RF + SMB + HML + RMW + CMA, data = df)
+step1 <- stepAIC(no_interactions_fit, direction = "both")
+step1$anova             
+
+
+interaction_fit <- lm(Excess_Returns ~ (Mkt_RF + SMB + HML + RMW + CMA)^2, data = df)
+step2 <- stepAIC(interaction_fit, direction = "both")
+step2$anova
+
+#we see that the AIC for the interaction fit is lower and is thus a better fit
+
+hist(step$residuals, breaks = 200)
 
 ##NEXT STEPS:
 ##Change mutate above to make EXCESS RETURNS = %return - RF (%return = (pricechange + dividend)/ openprice)
 ##Run a 5 factor test to see what effects each one has on the excess return
 ##plot - histagram of residuals or x = a FF Factor y = excess return or maybe the residuals
-
-
