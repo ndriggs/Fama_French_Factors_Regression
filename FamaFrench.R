@@ -113,21 +113,48 @@ step1 <- stepAIC(no_interactions_fit, direction = "both")
 #still has all 5 factors and could not be reduced
 step1$anova             
 
+
+#Below I ran the regression with interactions just to help with learning
+#how to use R and perform regressions
+#With the Fama French 5 Factor Model we just use the risk factors individually
+#Otherwise that means each interation is another risk factor that is also priced
+#which doesn't make as much sense conceptually and makes the model more complicated
+#########
 #run the regression with interactions
 interaction_fit <- lm(Excess_Returns ~ (Mkt_RF + SMB + HML + RMW + CMA)^2, data = df)
 
 #use the stepAIC function again for variable selection
 step2 <- stepAIC(interaction_fit, direction = "both")
 
-#view the selected model. We see that only 5 of 10 possible interactions
+#view the selected model and the betas. We see that only 5 of 10 possible interactions
 #are included in the final model, in addition to the individual 5 factors 
 step2$anova
+step2$coefficients
 
 #we see that the AIC for the interaction fit is lower and is thus a better fit
+#########
 
-hist(step$residuals, breaks = 200)
+#check to see that the residuals are normally distributed 
+hist(no_interactions_fit$residuals, 
+     breaks = 100, 
+     col = "dark blue", 
+     main = "Residuals from Linear Model",
+     xlab = "")
 
-##NEXT STEPS:
-##Change mutate above to make EXCESS RETURNS = %return - RF (%return = (pricechange + dividend)/ openprice)
-##Run a 5 factor test to see what effects each one has on the excess return
-##plot - histagram of residuals or x = a FF Factor y = excess return or maybe the residuals
+#plot the residuals against the returns
+plot(x = df$Excess_Returns, 
+     y = no_interactions_fit$residuals, 
+     main = "Residuals vs. Excess Returns",
+     xlab = "Excess Returns",
+     ylab = "Residuals")
+
+
+#create a function for the model to plot residuals
+#against fitted values
+betas <- no_interactions_fit$coefficients
+names(betas) <- NULL
+
+fama_french_model <- function(Mkt_RF, SMB, HML, RMW, CMA){
+  fitted_values <- betas[1] + betas[2]*Mkt_RF + betas[3]*SMB +
+                   betas[4]*HML + betas[5]*RMW + betas[6]*CMA
+}
